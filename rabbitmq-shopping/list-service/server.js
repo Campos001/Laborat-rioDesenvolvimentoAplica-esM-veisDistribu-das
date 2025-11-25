@@ -11,15 +11,21 @@ const RABBITMQ_URL = process.env.RABBITMQ_URL || 'amqp://admin:admin123@localhos
 let channel = null;
 let connection = null;
 
-// Mock database
-const lists = new Map([
+// Mock database - dados iniciais
+const initialLists = [
   ['1', { id: '1', userId: 'user123', name: 'Compras Semanais', items: ['Arroz', 'Feijão', 'Macarrão'], total: 45.50, status: 'active' }],
-  ['2', { id: '2', userId: 'user456', name: 'Feira do Mês', items: ['Frutas', 'Verduras'], total: 78.20, status: 'active' }]
-]);
+  ['2', { id: '2', userId: 'user456', name: 'Feira do Mês', items: ['Frutas', 'Verduras'], total: 78.20, status: 'active' }],
+  ['3', { id: '3', userId: 'user123', name: 'Carnes e Aves', items: ['Frango', 'Carne Moída', 'Peixe'], total: 125.90, status: 'active' }],
+  ['4', { id: '4', userId: 'user789', name: 'Limpeza', items: ['Detergente', 'Sabão', 'Água Sanitária'], total: 32.50, status: 'active' }],
+  ['5', { id: '5', userId: 'user456', name: 'Padaria', items: ['Pão', 'Leite', 'Manteiga', 'Queijo'], total: 28.75, status: 'active' }]
+];
+
+const lists = new Map(initialLists);
 
 const users = new Map([
   ['user123', { id: 'user123', email: 'joao@email.com', name: 'João Silva' }],
-  ['user456', { id: 'user456', email: 'maria@email.com', name: 'Maria Santos' }]
+  ['user456', { id: 'user456', email: 'maria@email.com', name: 'Maria Santos' }],
+  ['user789', { id: 'user789', email: 'pedro@email.com', name: 'Pedro Costa' }]
 ]);
 
 // Configuração do RabbitMQ
@@ -156,6 +162,21 @@ app.post('/lists/:id/checkout', async (req, res) => {
       error: 'Erro ao processar checkout'
     });
   }
+});
+
+// POST /lists/reset - Resetar todas as listas para status 'active' (para testes)
+app.post('/lists/reset', (req, res) => {
+  // Resetar todas as listas para active
+  lists.forEach((list) => {
+    list.status = 'active';
+    delete list.completedAt;
+  });
+  
+  res.json({
+    success: true,
+    message: 'Todas as listas foram resetadas para status active',
+    totalLists: lists.size
+  });
 });
 
 // Health check
