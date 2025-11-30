@@ -16,23 +16,19 @@ class ConnectivityService {
   bool get isOnline => _isOnline;
 
   Future<void> initialize() async {
-    final connectivityResults = await _connectivity.checkConnectivity();
-    final results = connectivityResults is List<ConnectivityResult>
-        ? connectivityResults
-        : [connectivityResults as ConnectivityResult];
-    _updateStatus(results);
+    final ConnectivityResult result = await _connectivity.checkConnectivity();
+    _updateStatus(result);
 
-    _subscription = _connectivity.onConnectivityChanged.listen((result) {
-      _updateStatus([result]);
+    _subscription = _connectivity.onConnectivityChanged.listen((ConnectivityResult result) {
+      _updateStatus(result);
     });
 
     print('✅ Serviço de conectividade inicializado');
   }
 
-  void _updateStatus(List<ConnectivityResult> results) {
+  void _updateStatus(ConnectivityResult result) {
     final wasOnline = _isOnline;
-    _isOnline = results.isNotEmpty && 
-                results.any((result) => result != ConnectivityResult.none);
+    _isOnline = result != ConnectivityResult.none;
 
     if (wasOnline != _isOnline) {
       print(_isOnline ? '🟢 Conectado à internet' : '🔴 Sem conexão à internet');
@@ -41,11 +37,8 @@ class ConnectivityService {
   }
 
   Future<bool> checkConnectivity() async {
-    final connectivityResults = await _connectivity.checkConnectivity();
-    final results = connectivityResults is List<ConnectivityResult>
-        ? connectivityResults
-        : [connectivityResults as ConnectivityResult];
-    _updateStatus(results);
+    final ConnectivityResult result = await _connectivity.checkConnectivity();
+    _updateStatus(result);
     return _isOnline;
   }
 
