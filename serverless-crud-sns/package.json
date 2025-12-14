@@ -1,0 +1,27 @@
+{
+  "name": "serverless-crud-sns",
+  "version": "1.0.0",
+  "description": "CRUD Serverless com SNS usando LocalStack",
+  "main": "index.js",
+  "scripts": {
+    "deploy": "serverless deploy --stage local",
+    "remove": "serverless remove --stage local",
+    "invoke": "serverless invoke local",
+    "logs": "serverless logs -f",
+    "create-table": "node create-table.js"
+  },
+  "keywords": ["serverless", "aws", "localstack", "sns", "dynamodb"],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "serverless": "^3.38.0",
+    "serverless-offline": "^13.3.3",
+    "serverless-localstack": "^1.0.0",
+    "serverless-dynamodb-local": "^0.2.40"
+  },
+  "dependencies": {
+    "aws-sdk": "^2.1490.0",
+    "uuid": "^9.0.1"
+  }
+}
+
