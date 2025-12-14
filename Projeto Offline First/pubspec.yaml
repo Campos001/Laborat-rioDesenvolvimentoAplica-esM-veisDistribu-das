@@ -25,6 +25,9 @@ dependencies:
   # Utilities
   uuid: ^4.0.0
   intl: ^0.18.0
+  
+  # Câmera e Imagens
+  image_picker: ^1.0.7
 
 dev_dependencies:
   flutter_test:

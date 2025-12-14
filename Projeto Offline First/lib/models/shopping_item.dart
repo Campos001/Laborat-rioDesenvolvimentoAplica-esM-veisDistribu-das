@@ -14,6 +14,9 @@ class ShoppingItem {
   // Campos de sincronização
   final SyncStatus syncStatus;
   final DateTime? localUpdatedAt;
+  
+  // URL da imagem no S3 LocalStack
+  final String? imageUrl;
 
   ShoppingItem({
     String? id,
@@ -27,6 +30,7 @@ class ShoppingItem {
     this.version = 1,
     this.syncStatus = SyncStatus.synced,
     this.localUpdatedAt,
+    this.imageUrl,
   })  : id = id ?? const Uuid().v4(),
         createdAt = createdAt ?? DateTime.now(),
         updatedAt = updatedAt ?? DateTime.now();
@@ -40,6 +44,7 @@ class ShoppingItem {
     int? version,
     SyncStatus? syncStatus,
     DateTime? localUpdatedAt,
+    String? imageUrl,
   }) {
     return ShoppingItem(
       id: id,
@@ -53,6 +58,7 @@ class ShoppingItem {
       version: version ?? this.version,
       syncStatus: syncStatus ?? this.syncStatus,
       localUpdatedAt: localUpdatedAt ?? this.localUpdatedAt,
+      imageUrl: imageUrl ?? this.imageUrl,
     );
   }
 
@@ -69,6 +75,7 @@ class ShoppingItem {
       'version': version,
       'syncStatus': syncStatus.toString(),
       'localUpdatedAt': localUpdatedAt?.millisecondsSinceEpoch,
+      'imageUrl': imageUrl,
     };
   }
 
@@ -90,6 +97,7 @@ class ShoppingItem {
       localUpdatedAt: map['localUpdatedAt'] != null
           ? DateTime.fromMillisecondsSinceEpoch(map['localUpdatedAt'])
           : null,
+      imageUrl: map['imageUrl'],
     );
   }
 
@@ -104,6 +112,7 @@ class ShoppingItem {
       'createdAt': createdAt.millisecondsSinceEpoch,
       'updatedAt': updatedAt.millisecondsSinceEpoch,
       'version': version,
+      'imageUrl': imageUrl,
     };
   }
 
@@ -119,6 +128,7 @@ class ShoppingItem {
       updatedAt: DateTime.fromMillisecondsSinceEpoch(json['updatedAt']),
       version: json['version'] ?? 1,
       syncStatus: SyncStatus.synced,
+      imageUrl: json['imageUrl'],
     );
   }
 }

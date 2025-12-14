@@ -1,12 +1,44 @@
 // list-service/server.js
 const express = require('express');
 const amqp = require('amqplib');
+const AWS = require('aws-sdk');
 
 const app = express();
-app.use(express.json());
+app.use(express.json({ limit: '10mb' })); // Aumentar limite para imagens base64
 
 const PORT = process.env.PORT || 3002;
 const RABBITMQ_URL = process.env.RABBITMQ_URL || 'amqp://admin:admin123@localhost:5672';
+const LOCALSTACK_ENDPOINT = process.env.LOCALSTACK_ENDPOINT || 'http://localhost:4566';
+const S3_BUCKET = process.env.S3_BUCKET || 'shopping-images';
+
+// Configuração do S3 com LocalStack
+const s3 = new AWS.S3({
+  endpoint: LOCALSTACK_ENDPOINT,
+  region: 'us-east-1',
+  accessKeyId: 'test',
+  secretAccessKey: 'test',
+  s3ForcePathStyle: true, // Necessário para LocalStack
+  signatureVersion: 'v4'
+});
+
+// Função para garantir que o bucket existe
+async function ensureBucketExists() {
+  try {
+    await s3.headBucket({ Bucket: S3_BUCKET }).promise();
+    console.log(`✅ Bucket ${S3_BUCKET} já existe`);
+  } catch (error) {
+    if (error.statusCode === 404) {
+      try {
+        await s3.createBucket({ Bucket: S3_BUCKET }).promise();
+        console.log(`✅ Bucket ${S3_BUCKET} criado com sucesso`);
+      } catch (createError) {
+        console.error(`❌ Erro ao criar bucket: ${createError.message}`);
+      }
+    } else {
+      console.error(`❌ Erro ao verificar bucket: ${error.message}`);
+    }
+  }
+}
 
 let channel = null;
 let connection = null;
@@ -179,12 +211,97 @@ app.post('/lists/reset', (req, res) => {
   });
 });
 
+// POST /upload - Upload de imagem para S3 LocalStack
+app.post('/upload', async (req, res) => {
+  try {
+    const { imageBase64, fileName, itemId } = req.body;
+
+    if (!imageBase64) {
+      return res.status(400).json({
+        success: false,
+        error: 'Imagem em Base64 é obrigatória'
+      });
+    }
+
+    // Remover prefixo data:image se existir
+    const base64Data = imageBase64.replace(/^data:image\/\w+;base64,/, '');
+    const buffer = Buffer.from(base64Data, 'base64');
+
+    // Gerar nome único do arquivo
+    const timestamp = Date.now();
+    const fileExtension = fileName?.split('.').pop() || 'jpg';
+    const key = itemId 
+      ? `items/${itemId}/${timestamp}.${fileExtension}`
+      : `items/${timestamp}.${fileExtension}`;
+
+    // Upload para S3 LocalStack
+    const uploadParams = {
+      Bucket: S3_BUCKET,
+      Key: key,
+      Body: buffer,
+      ContentType: 'image/jpeg',
+      ACL: 'public-read'
+    };
+
+    await s3.putObject(uploadParams).promise();
+
+    // URL da imagem no LocalStack
+    const imageUrl = `${LOCALSTACK_ENDPOINT}/${S3_BUCKET}/${key}`;
+
+    console.log(`📸 Imagem enviada: ${key}`);
+
+    res.json({
+      success: true,
+      message: 'Imagem enviada com sucesso',
+      data: {
+        imageUrl: imageUrl,
+        key: key,
+        bucket: S3_BUCKET
+      }
+    });
+
+  } catch (error) {
+    console.error('❌ Erro no upload:', error.message);
+    res.status(500).json({
+      success: false,
+      error: 'Erro ao fazer upload da imagem',
+      details: error.message
+    });
+  }
+});
+
+// GET /images/:key - Obter imagem do S3 (opcional)
+app.get('/images/:key(*)', async (req, res) => {
+  try {
+    const key = req.params.key;
+    const params = {
+      Bucket: S3_BUCKET,
+      Key: key
+    };
+
+    const data = await s3.getObject(params).promise();
+    res.setHeader('Content-Type', data.ContentType || 'image/jpeg');
+    res.send(data.Body);
+
+  } catch (error) {
+    console.error('❌ Erro ao buscar imagem:', error.message);
+    res.status(404).json({
+      success: false,
+      error: 'Imagem não encontrada'
+    });
+  }
+});
+
 // Health check
 app.get('/health', (req, res) => {
   res.json({
     service: 'list-service',
     status: 'healthy',
     rabbitmq: channel ? 'connected' : 'disconnected',
+    s3: {
+      endpoint: LOCALSTACK_ENDPOINT,
+      bucket: S3_BUCKET
+    },
     timestamp: new Date().toISOString()
   });
 });
@@ -192,6 +309,7 @@ app.get('/health', (req, res) => {
 // Inicializar servidor
 async function start() {
   await setupRabbitMQ();
+  await ensureBucketExists();
   
   app.listen(PORT, () => {
     console.log(`🚀 List Service rodando na porta ${PORT}`);
@@ -199,7 +317,11 @@ async function start() {
     console.log(`   GET  http://localhost:${PORT}/lists`);
     console.log(`   GET  http://localhost:${PORT}/lists/:id`);
     console.log(`   POST http://localhost:${PORT}/lists/:id/checkout`);
+    console.log(`   POST http://localhost:${PORT}/upload`);
+    console.log(`   GET  http://localhost:${PORT}/images/:key`);
     console.log(`   GET  http://localhost:${PORT}/health`);
+    console.log(`📦 S3 LocalStack: ${LOCALSTACK_ENDPOINT}`);
+    console.log(`🪣 Bucket: ${S3_BUCKET}`);
   });
 }
 

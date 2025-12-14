@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:image_picker/image_picker.dart';
 import '../models/shopping_item.dart';
 import '../providers/shopping_provider.dart';
+import '../services/image_upload_service.dart';
 
 class ItemFormScreen extends StatefulWidget {
   final ShoppingItem? item;
@@ -18,6 +20,8 @@ class _ItemFormScreenState extends State<ItemFormScreen> {
   late TextEditingController _quantityController;
   late String _category;
   bool _isLoading = false;
+  bool _isUploadingImage = false;
+  String? _imageUrl; // URL da imagem no S3 LocalStack
 
   final List<String> _categories = [
     'geral',
@@ -36,6 +40,7 @@ class _ItemFormScreenState extends State<ItemFormScreen> {
       text: widget.item?.quantity.toString() ?? '1',
     );
     _category = widget.item?.category ?? 'geral';
+    _imageUrl = widget.item?.imageUrl; // Carregar imagem existente se estiver editando
   }
 
   @override
@@ -94,6 +99,113 @@ class _ItemFormScreenState extends State<ItemFormScreen> {
               },
             ),
             const SizedBox(height: 16),
+            // Seção de Foto
+            Card(
+              elevation: 2,
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Foto do Produto',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    // Preview da imagem
+                    if (_imageUrl != null)
+                      Stack(
+                        children: [
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(8),
+                            child: Image.network(
+                              _imageUrl!,
+                              width: double.infinity,
+                              height: 200,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) {
+                                return Container(
+                                  width: double.infinity,
+                                  height: 200,
+                                  color: Colors.grey[300],
+                                  child: const Icon(
+                                    Icons.broken_image,
+                                    size: 50,
+                                    color: Colors.grey,
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                          Positioned(
+                            top: 8,
+                            right: 8,
+                            child: IconButton(
+                              icon: const Icon(Icons.close, color: Colors.white),
+                              style: IconButton.styleFrom(
+                                backgroundColor: Colors.black54,
+                              ),
+                              onPressed: () {
+                                setState(() {
+                                  _imageUrl = null;
+                                });
+                              },
+                            ),
+                          ),
+                        ],
+                      )
+                    else
+                      Container(
+                        width: double.infinity,
+                        height: 200,
+                        decoration: BoxDecoration(
+                          border: Border.all(color: Colors.grey[300]!),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Icon(
+                          Icons.camera_alt,
+                          size: 50,
+                          color: Colors.grey,
+                        ),
+                      ),
+                    const SizedBox(height: 12),
+                    // Botões de ação
+                    Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton.icon(
+                            onPressed: _isUploadingImage
+                                ? null
+                                : () => _captureImage(ImageSource.camera),
+                            icon: const Icon(Icons.camera_alt),
+                            label: const Text('Tirar Foto'),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: OutlinedButton.icon(
+                            onPressed: _isUploadingImage
+                                ? null
+                                : () => _captureImage(ImageSource.gallery),
+                            icon: const Icon(Icons.photo_library),
+                            label: const Text('Galeria'),
+                          ),
+                        ),
+                      ],
+                    ),
+                    if (_isUploadingImage)
+                      const Padding(
+                        padding: EdgeInsets.only(top: 8),
+                        child: LinearProgressIndicator(),
+                      ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
             DropdownButtonFormField<String>(
               value: _category,
               decoration: const InputDecoration(
@@ -133,6 +245,49 @@ class _ItemFormScreenState extends State<ItemFormScreen> {
     );
   }
 
+  Future<void> _captureImage(ImageSource source) async {
+    setState(() => _isUploadingImage = true);
+
+    try {
+      final imageUrl = await ImageUploadService.captureAndUpload(
+        source: source,
+        itemId: widget.item?.id,
+      );
+
+      if (imageUrl != null && mounted) {
+        setState(() {
+          _imageUrl = imageUrl;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('✅ Foto enviada com sucesso!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      } else if (mounted) {
+        // Usuário cancelou ou não selecionou imagem
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('ℹ️ Nenhuma foto selecionada'),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('❌ Erro ao enviar foto: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isUploadingImage = false);
+      }
+    }
+  }
+
   Future<void> _handleSubmit() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -149,6 +304,7 @@ class _ItemFormScreenState extends State<ItemFormScreen> {
             name: _nameController.text.trim(),
             quantity: quantity,
             category: _category,
+            imageUrl: _imageUrl,
           ),
         );
       } else {
@@ -157,6 +313,7 @@ class _ItemFormScreenState extends State<ItemFormScreen> {
           name: _nameController.text.trim(),
           quantity: quantity,
           category: _category,
+          imageUrl: _imageUrl,
         );
       }
 

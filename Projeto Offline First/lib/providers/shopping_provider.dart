@@ -70,12 +70,14 @@ class ShoppingProvider with ChangeNotifier {
     required String name,
     int quantity = 1,
     String category = 'geral',
+    String? imageUrl,
   }) async {
     try {
       final item = ShoppingItem(
         name: name,
         quantity: quantity,
         category: category,
+        imageUrl: imageUrl,
       );
 
       await _syncService.createItem(item);
