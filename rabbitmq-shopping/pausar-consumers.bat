@@ -2,7 +2,7 @@
 REM Script para pausar os consumers e permitir visualizar mensagens na fila
 
 echo ⏸️  Pausando consumers...
-docker-compose stop notification-consumer analytics-consumer
+docker-compose stop notification-consumer analytics-consumer task-consumer
 echo ✅ Consumers pausados!
 echo.
 echo 💡 Agora você pode:

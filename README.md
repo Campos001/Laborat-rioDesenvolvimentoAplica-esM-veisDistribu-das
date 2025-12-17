@@ -56,6 +56,7 @@ retomar-consumers.bat
 # Ver logs processando
 docker logs -f notification_consumer
 docker logs -f analytics_consumer
+docker logs -f task_consumer
 ```
 
 ## 📋 Comandos Úteis
@@ -64,6 +65,7 @@ docker logs -f analytics_consumer
 ```bash
 docker logs -f notification_consumer
 docker logs -f analytics_consumer
+docker logs -f task_consumer
 docker-compose logs -f
 ```
 
@@ -85,7 +87,8 @@ rabbitmq-shopping/
 ├── docker-compose.yml
 ├── list-service/          # Producer (API REST)
 ├── notification-consumer/  # Consumer A (Notificações)
-└── analytics-consumer/     # Consumer B (Analytics)
+├── analytics-consumer/     # Consumer B (Analytics)
+└── task-consumer/          # Consumer C (Tarefas do Mobile App)
 ```
 
 ## 🏗️ Arquitetura
@@ -96,5 +99,40 @@ Cliente → List Service (Producer) → RabbitMQ → Consumers
                         ┌─────────────┴──────────────┐
                         ↓                            ↓
               Notification Consumer        Analytics Consumer
+
+App Flutter → RabbitMQ → Task Consumer
+              (task_events)
+```
+
+## 📱 Integração com Flutter
+
+O sistema também recebe tarefas do app Flutter através da fila `task_queue`.
+
+**Documentação completa:** [FLUTTER-INTEGRATION.md](rabbitmq-shopping/FLUTTER-INTEGRATION.md)
+
+### Formato da Mensagem do Flutter
+
+```json
+{
+  "operation": "CREATE|UPDATE|DELETE",
+  "task": {
+    "id": "...",
+    "title": "...",
+    "description": "...",
+    "completed": false,
+    "synced": false,
+    "createdAt": "...",
+    "updatedAt": "..."
+  },
+  "timestamp": "2024-01-01T12:00:00.000Z",
+  "source": "mobile_app"
+}
+```
+
+### Ver Tarefas do Mobile
+
+```bash
+# Ver logs do consumer de tarefas
+docker logs -f task_consumer
 ```
 
