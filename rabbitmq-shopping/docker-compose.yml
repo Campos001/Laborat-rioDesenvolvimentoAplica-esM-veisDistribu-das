@@ -53,16 +53,5 @@ services:
         condition: service_healthy
     restart: unless-stopped
 
-  # Consumer C - Task Service (Mobile App)
-  task-consumer:
-    build: ./task-consumer
-    container_name: task_consumer
-    environment:
-      - RABBITMQ_URL=amqp://admin:admin123@rabbitmq:5672
-    depends_on:
-      rabbitmq:
-        condition: service_healthy
-    restart: unless-stopped
-
 volumes:
   rabbitmq_data:
