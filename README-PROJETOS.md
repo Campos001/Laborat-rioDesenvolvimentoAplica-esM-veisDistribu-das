@@ -3,8 +3,8 @@
 ## 🎯 Projetos Disponíveis
 
 1. **🐇 RabbitMQ - Mensageria** (15 pontos)
-2. **📱 Offline First - App Mobile** (25 pontos)
-3. **☁️ Serverless CRUD SNS** (31 pontos)
+2. **☁️ Serverless CRUD SNS** (31 pontos)
+3. **📱 Flutter Application 1** - Roteiro 06 (SQLite)
 
 ---
 
@@ -38,27 +38,7 @@ docker logs -f notification_consumer
 
 ---
 
-## 📱 2. Offline First - App Mobile
-
-**Localização:** `Projeto Offline First/`
-
-**Quick Start:** [README-QUICK-START.md](Projeto%20Offline%20First/README-QUICK-START.md)
-
-### ⚡ Execução Rápida
-```bash
-cd "Projeto Offline First"
-flutter pub get
-flutter run
-```
-
-**Roteiro de Teste:**
-1. Modo Avião ON → Criar/editar itens
-2. Fechar app → Reabrir (dados persistem)
-3. Modo Avião OFF → Sincronização automática
-
----
-
-## ☁️ 3. Serverless CRUD SNS
+## ☁️ 2. Serverless CRUD SNS
 
 **Localização:** `serverless-crud-sns/`
 
@@ -90,6 +70,26 @@ serverless offline --stage local
 
 ---
 
+## 📱 3. Flutter Application 1 - Roteiro 06
+
+**Localização:** `Flutter/flutter_application_1/`
+
+### ⚡ Execução Rápida
+```bash
+cd Flutter/flutter_application_1
+flutter pub get
+flutter run
+```
+
+**Funcionalidades:**
+- CRUD completo de tarefas
+- Persistência local com SQLite
+- Filtro por status
+- Contador de tarefas
+- Campo de prioridade
+
+---
+
 ## 📋 Guias Completos
 
 - **Guia de Apresentação Completo:** [GUIA-APRESENTACAO-COMPLETA.md](GUIA-APRESENTACAO-COMPLETA.md)
@@ -112,12 +112,6 @@ preparar-apresentacao.bat
 - ✅ Código-fonte no Git
 - ✅ Docker Compose configurado
 - ✅ Producer e Consumers implementados
-- ✅ README com instruções
-
-### Offline First
-- ✅ Código-fonte no Git
-- ✅ SQLite implementado
-- ✅ Sincronização offline-first
 - ✅ README com instruções
 
 ### Serverless CRUD SNS
